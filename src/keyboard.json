@@ -1,0 +1,11 @@
+{
+	"keyW": 87 ,
+	"keyA": 65,
+	"keyS": 83,
+	"keyD": 68,
+	"arrowUp": 38,
+	"arrowLeft": 37,
+	"arrowDown": 40,
+	"arrowRight": 39,
+	"space": 32
+}
