@@ -9,7 +9,7 @@ var SAT = require('sat');
 var resser = new Resurrect({revive: false});
 var OPTIONS = require('./options.js');
 var KEYBOARD = require('./keyboard.json');
-
+app.use(express.static(__dirname + '/../client'));
 var Users = [];
 var Sockets = [];
 var Score = 
