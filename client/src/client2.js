@@ -6,7 +6,7 @@ var sc = document.getElementById("sc");
 var mousepressed = false;
 var socket;
 if (!socket) {
-        socket = io("http://smthgroup.chph.ras.ru:8081");
+        socket = io("http://localhost:3000");
         
     }
 	
