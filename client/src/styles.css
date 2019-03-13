@@ -1,15 +1,77 @@
 body {
   font-family: sans-serif;
- 
+  text-align: center;
+  background: url("back.png") no-repeat center center fixed; 
+  background-size: cover;                 
+ /* background-color: #cccccc; */
  }
  
- div {
+ .gameCanvas {
 	text-align: center; 
 	 
  }
-
- canvas {
-	 background-color: lightgreen;
-	 
+ 
+ .control {
+	 text-align: center
  }
 
+ .leftScore {
+	 
+	 position: absolute;
+	 left: 3%;
+	 top: 35%;
+	 color: blue;
+ }
+ 
+ .startImg {
+	 position: absolute;
+	 text-align: center;
+	 z-index: 10;
+	 height: 80%;
+ }
+ 
+ h1 {
+	 font-size: 11vw;
+	 
+ }
+ 
+ .rightScore {
+	 position: absolute;
+	 right: 3%;
+	 top: 35%;
+	 color: red;
+ }
+ 
+ 
+ canvas {
+	 background-color: lightgreen;
+	
+	/* width: 800px;
+	 height: 500px;
+ */
+ }
+ 
+
+button {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
+
+select {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+	
+	
+}

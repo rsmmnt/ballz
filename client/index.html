@@ -8,8 +8,20 @@
 </head>
 
 <body>
-	<div><canvas tabindex='1' id="cv"></canvas></div>
-	<div class="score" id="sc"></div>
+	<div class = "gameCanvas" id= "gameCanvas"><canvas tabindex='1' id="cv"></canvas></div>
+	<div class="leftScore" id="leftSc"></div>	
+	<div class="rightScore" id="rightSc"></div>
+	<div class="time" id="sc"></div>
+	<div class="control"><button class="startGame" id="start2Button">Play 1x1!</button>
+	<button class="startGame" id="start4Button">Play 2x2!</button>
+	<button class="startGame" id="start6Button">Play 3x3!</button>
+
+	<select class="selplayer" id="typeSelector">
+	<option value="volvo">Default player</option>
+	<option value="agile">Agile player</option>
+	<option value="shooter">Shooter</option>
+	</select>
+	</div>
 	<script src="https://cdn.jsdelivr.net/npm/matter-js@0.14.2/build/matter.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
 	<script src="src/optionsclient.js"></script>

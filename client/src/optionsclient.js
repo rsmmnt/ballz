@@ -19,5 +19,5 @@ const OPTIONS =
 	MAXVELOCITY: 6,
 	MAXVELOCITYSQ: 36,
 	serverPort: 3000,
-	serverHost: '0.0.0.0'
+	serverHost: 'localhost'
 };
