@@ -7,7 +7,18 @@ var SAT = require('sat')
 var resser = new Resurrect({ revive: false })
 var OPTIONS = require('./options.js')
 var KEYBOARD = require('./keyboard.json')
+var mysql = require('mysql')
 var io = require('socket.io')(http)
+const uuid = require('uuid/v4')
+const session = require('express-session')
+const FileStore = require('session-file-store')(session);
+const bodyParser = require('body-parser');
+const crypto = require('crypto');
+const validator = require('validator');
+var jwt = require('jsonwebtoken');
+
+console.log(OPTIONS);
+
 var num2Rooms = 0
 var num4Rooms = 0
 var num6Rooms = 0
@@ -18,7 +29,150 @@ var cur2Users = 0
 var cur4Users = 0
 var cur6Users = 0
 var roomrunner = require('./roomserver.js')
+
+
+
+
+
+
+//app.use('/signupform', express.static(__dirname + '/../client/signup'));
+//app.use(bodyParser.urlencoded({ extended: false }))
+/*
+app.use(session({
+  genid: (req) => {
+    console.log('Inside session middleware genid function')
+    console.log(`Request object sessionID from client: ${req.sessionID}`)
+    return uuid() // use UUIDs for session IDs
+  },
+  store: new FileStore(),
+  secret: 'testsecret',
+  resave: false,
+  saveUninitialized: true
+}));
+*/
+
+
+const db = mysql.createConnection ({
+    host: OPTIONS.dbHost,
+    user: OPTIONS.dbUser,
+    password: OPTIONS.dbPassword,
+    database: OPTIONS.dbName
+});
+
+
+
+
+app.get('/top100', function(req,res)
+{
+		console.log("top100fun");
+	var query = 'SELECT name, games, (wins/games) as winrate FROM users ORDER BY winrate DESC LIMIT 100';
+	
+	var html2 = "<html><body bgcolor=\"lightgreen\"> <div align=\"center\" style=\"font-size:2vw\">"
+	html2+= "<h1> Top 100 </h1> <a href='/'> <h3> Back to the game </h3> </a> <table border=3 cellpadding=10 style=\"font-size:2vw;\" >";
+	html2+= ("<tr><td>" + "Player name" + "</td><td>" + "Games played" + "</td><td>" +  "Win Rate" + "</td></tr>");
+	console.log("generating top100");
+	db.query(query, function (err, result, fields)
+	{
+		result.forEach(function(row)
+		{
+			if(row.games != 0)
+			{
+			html2+= ("<tr><td>" + row.name + "</td><td>" + parseInt(row.games) + "</td><td>" +  row.winrate + "</td></tr>");
+			}
+		});
+		
+		html2+="</table></div></body></html>";
+		res.send(html2);
+		res.end();
+	});
+
+
+	
+	
+});
+
 app.use(express.static(__dirname + '/../client'));
+
+/*
+app.post('/login', logIn);
+app.post('/signup', signUp);
+app.get('/stats', getStats);
+
+
+
+
+function logIn(req, res)
+{
+	var query = 'SELECT name, hash, salt FROM users WHERE name = \"' + req.body.username + '\"';
+	db.query(query, function (err, result, fields)
+	{
+		if(result.length > 0)
+		{
+			if(result[0].hash == crypto.pbkdf2Sync(req.body.password, result[0].salt, 2, 64, 'sha512'))
+			{
+				//res.send("Success <a href = \'/\'> Go back </a>");
+				
+				res.redirect("/?login=success");
+			}
+			else
+			{
+				res.redirect("/?login=failed");
+			}
+		}
+		else
+		{
+			res.redirect("/?login=failed");
+		}
+		
+	});
+//	return 
+
+	
+}
+*/
+/*
+function signUp(req, res)
+{
+	
+	var query = 'SELECT name, hash FROM users WHERE name = \"' + req.body.username + '\"';
+	db.query(query, function (err, result, fields)
+	{
+		if(result.length > 0)
+		{
+			res.send("Login exists, choose different one");
+			return;
+		}
+		
+	});
+	
+	var salt = crypto.randomBytes(16).toString('hex');
+	var hash = crypto.pbkdf2Sync(req.body.password, salt, 2, 64, 'sha512');
+
+	db.query('INSERT INTO users ( name , hash, salt, games, wins ) VALUES (\'' + req.body.username + '\',\'' + hash + '\',\'' + salt + '\', 0, 0)',
+	function(err,result)
+	{
+		console.log(err);
+		console.log(result);
+		//res.send('Successful signup');
+	});
+	//return res.redirect(200,"/");
+
+	
+}
+*/
+
+
+function getStats(req,res)
+{
+	
+}
+
+
+
+
+
+
+
 
 var destroy2Room = function(roomId)
 {
@@ -63,7 +217,7 @@ function roomStarter()
 	var len6 = ids6.length;
 	if(len2 >= 2)
 	{
-		rooms2player['2 ' + num2Rooms] = new roomrunner.gameRoom(io, '2 ' + num2Rooms, 2, destroy2Room)
+		rooms2player['2 ' + num2Rooms] = new roomrunner.gameRoom(io, '2 ' + num2Rooms, 2, destroy2Room, db)
 		console.log('create 2Room id 2 ' + num2Rooms);
 		var i;
 		for(i = 0; i < 2; i++)
@@ -86,7 +240,7 @@ function roomStarter()
 	
 	if(len4 >= 4)
 	{
-		rooms4player['4 ' + num4Rooms] = new roomrunner.gameRoom(io, '4 ' + num4Rooms, 4, destroy4Room)
+		rooms4player['4 ' + num4Rooms] = new roomrunner.gameRoom(io, '4 ' + num4Rooms, 4, destroy4Room, db)
 		var i;
 		for(i = 0; i < 4; i++)
 		{
@@ -104,7 +258,7 @@ function roomStarter()
 	
 	if(len6 >= 6)
 	{
-		rooms6player['6 ' + num6Rooms] = new roomrunner.gameRoom(io, '6 ' + num6Rooms, 6, destroy6Room)
+		rooms6player['6 ' + num6Rooms] = new roomrunner.gameRoom(io, '6 ' + num6Rooms, 6, destroy6Room, db)
 		var i;
 		for(i = 0; i < 6; i++)
 		{
@@ -125,6 +279,139 @@ function roomStarter()
 
 
 io.on('connection', function (socket) {
+  
+  socket.on('authLogin', function(data)
+  {
+	  if(validator.isAlphanumeric(data.username))
+	  {
+	  console.log('login request ' + data.username + ' ' + data.password + 'serversecret' + OPTIONS.serverSecret);
+	  var query = 'SELECT name, hash, salt FROM users WHERE name = \"' + data.username + '\"';
+	  console.log(query);
+	  db.query(query, function (err, result, fields)
+	  {
+		console.log(err);
+		if(result.length > 0)
+		{
+			if(result[0].hash == crypto.pbkdf2Sync(data.password, result[0].salt, 2, 64, 'sha512').toString('hex'))
+			{
+				//res.send("Success <a href = \'/\'> Go back </a>");
+				console.log("username: " + data.username + " secret:" + OPTIONS.serverSecret);
+				var payload = { username: data.username};
+				console.log(payload);
+				jwt.sign(payload,OPTIONS.serverSecret, function(err, token)
+				{
+					if(err)
+					{
+						console.log(err);
+					}
+					console.log("token = " + token);
+					socket.emit('sendAuthToken', {token: token, username: data.username});
+					socket.isAuthenthicated = true;
+					socket.username = data.username;
+					
+				});
+
+			}
+			else
+			{
+				socket.emit('loginInfo', 'Wrong password');
+			}
+		}
+		else
+		{
+			socket.emit('loginInfo', 'Username does not exist');
+		}
+	  });
+	  }
+	  else
+      {
+			socket.emit('loginInfo', 'Username must be alphanumeric');
+	  }
+	});
+	    
+  
+  
+  socket.on('authSignup', function(data)
+  {
+	  if(validator.isAlphanumeric(data.username))
+	  {
+		if(data.username.length >= 3)
+		{
+			if(data.password.length >= 8)
+			{
+	  
+	  //console.log('signup request ' + data.username + ' ' + data.password);
+	  var query = 'SELECT name, hash FROM users WHERE name = \"' + data.username + '\"';
+	  var isDup = true;
+	  db.query(query, function (err, result, fields)
+	  {
+		console.log(err);
+		console.log(result);
+		if(result.length > 0)
+		{
+			socket.emit('signupInfo', 'User already exists');
+			
+		}
+		else
+		{
+			var salt = crypto.randomBytes(16).toString('hex');
+			var hash = crypto.pbkdf2Sync(data.password, salt, 2, 64, 'sha512').toString('hex');
+
+			db.query('INSERT INTO users ( name , hash, salt, games, wins ) VALUES (\'' + data.username + '\',\'' + hash + '\',\'' + salt + '\', 0, 0)',
+			function(err2,result2)
+			{
+				console.log(err2);
+				console.log(result2);
+				socket.emit('signupInfo', 'Successful signup');
+			});
+		}
+		
+	  });
+	  }
+	  else
+	  {
+		  socket.emit('signupInfo', 'Password is too short');
+	  }
+	  }
+	  else
+	  {
+		  socket.emit('signupInfo', 'Username is too short');
+	  }
+	  }
+	  else
+	  {
+		  socket.emit('signupInfo', 'Only letters and numbers accepted in username');
+	  }
+	  
+	  
+  });
+  
+  
+  socket.on('authJwt', function(data)
+  {
+		
+		jwt.verify(data, OPTIONS.serverSecret, function(err, decoded) {
+			if(decoded)
+			{
+				socket.isAuthenthicated = true;
+				socket.username = decoded.username;
+				socket.emit('authJwtOk');
+			}
+			
+			
+		});
+
+
+	
+	  
+  });
+  
+  socket.on('authLogout', function(){
+	socket.isAuthenthicated = false;
+	socket.username = "";
+	
+	  
+  })
   
   
   socket.on('start2Game', function()
@@ -147,18 +434,21 @@ io.on('connection', function (socket) {
   
   
   socket.on('disconnect', function(){
-	 console.log('User disconnected from waiting queue');
+	 console.log('Socket disconnected');
 	 if(tmp2Sockets.hasOwnProperty(socket.id))
 	 {
 		delete tmp2Sockets[socket.id];
+		console.log('from 2WaitingQueue');
 	 }
 	 if(tmp4Sockets.hasOwnProperty(socket.id))
 	 {
 		delete tmp4Sockets[socket.id];
+		console.log('from 4WaitingQueue');
 	 }
 	 if(tmp6Sockets.hasOwnProperty(socket.id))
 	 {
 		delete tmp6Sockets[socket.id];
+		console.log('from 6WaitingQueue');
 	 }
 		
 	  

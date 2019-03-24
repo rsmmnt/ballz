@@ -10,6 +10,10 @@ var start2Btn = document.getElementById("start2Button");
 var start4Btn = document.getElementById("start4Button");
 var start6Btn = document.getElementById("start6Button");
 var typeSelector = document.getElementById("typeSelector");
+var loginDiv = document.getElementById("login");
+var loginBtn = document.getElementById("loginBtn");
+$('#loginDiv').hide();
+
 //var startimg = document.getElementById("startimg");
 
 var mousepressed = false;
@@ -17,6 +21,8 @@ var socketGroup = '';
 var socket;
 var engine;
 var render;
+var username = "guest";
+
 var gameStarted = false;
 canvdiv.style.visibility = "hidden";
 //startimg.style.display = "block";
@@ -32,15 +38,22 @@ require(['options'], function(data)
 */
 //var KEYBOARD = require('./keyboard.json');
 
+
+if (!socket) {
+        socket = io("http://" + OPTIONS.serverHost + ":" + OPTIONS.serverPort);  
+}
+
 var score = 
 {
 	topscore: 0,
 	botscore: 0
 }
 
+// Controls
+
 var keys={};
 
-canv.addEventListener('keydown', function(event)
+window.addEventListener('keydown', function(event)
 {
 	var key = event.which || event.keyCode;
 	keys[event.keyCode] = true;
@@ -48,7 +61,7 @@ canv.addEventListener('keydown', function(event)
 }, false);
 
 
-canv.addEventListener('keyup', function(event)
+window.addEventListener('keyup', function(event)
 {
 	var key = event.which || event.keyCode;
 	keys[event.keyCode] = false;
@@ -56,11 +69,108 @@ canv.addEventListener('keyup', function(event)
 }, false);
 
 
+// Auth handling
 
+socket.on('sendAuthToken', function(data)
+{
+    Cookies.set('token', data.token, { expires: 365 });
+	Cookies.set('username', data.username, { expires: 365 });
+	username = data.username;
+	$('#authDiv').html("<h2> " + Cookies.get('username') + "</h2>");
+	$('#authDiv').show();
+	$('#loginDiv').hide();
+	$('#loginBtn').hide();
+	$('#logoutBtn').show();
+});
+
+socket.on('loginInfo', function(data){
+	
+$('#loginResponse').html(data);
+});
+
+
+socket.on('signupInfo', function(data){
+
+$('#signupResponse').html(data);	
+	
+	
+});
+
+socket.on('authJwtOk', function(){
+	//username = data.username;
+	$('#authDiv').innerHTML = Cookies.get('username');
+	$('#authDiv').show();
+	$('#loginDiv').hide();
+	$('#loginBtn').hide();
+	$('#logoutBtn').show();
+	
+	
+});
+
+
+$('#logoutBtn').hide();
+var token = Cookies.get('token');
+if(token)
+{
+	socket.emit('authJwt',token);
+}
+if(Cookies.get('username'))
+{
+$('#authDiv').html("<h2>" + Cookies.get('username') + "</h2>");
+}
+else
+{
+$('#authDiv').html("<h2> Guest </h2>");
+	
+}
+$('#authDiv').show();
+console.log(Cookies.get('username'));
+
+$('#loginSubmit').click(function(){
+	socket.emit('authLogin', { username: $('#loginUsername').val(), password: $('#loginPassword').val()});
+	
+});
+
+$('#signupSubmit').click(function(){
+	if($('#signupPassword').val() == $('#signupPassword2').val())
+	{
+	socket.emit('authSignup', { username: $('#signupUsername').val(), password: $('#signupPassword').val()});
+	}
+	else
+	{
+	$('#signupResponse').html("Passwords do not match");	
+	}
+});
+
+$('#logoutBtn').click(function(){
+	socket.emit('authLogout');
+	Cookies.remove('username');
+	Cookies.remove('token');
+	//Cookies.set('username','Guest');
+	$('#authDiv').html( "<h2> Guest </h2>");
+	$('#authDiv').show();
+	$('#loginDiv').hide();
+	$('#loginBtn').show();
+	$('#logoutBtn').hide();
+	
+});
+
+
+// game stuff
 
 function startGame()
 {
 
+	var token = Cookies.get('token');
+	if(token)
+	{
+		socket.emit('authJwt',token);
+	}
+	//$('#authDiv').html("<h2>" + Cookies.get('username') + "</h2>");
+	//$('#authDiv').show();
+	
+	
+	
 	engine = Matter.Engine.create();
 	engine.world.gravity.x = 0;
 	engine.world.gravity.y = 0;
@@ -139,12 +249,14 @@ function startGame()
 		
 	}
 	
-	setInterval(sendUpdates,1000/120);
+	setInterval(sendUpdates,1000/60);
 	
 	
 	
 }
 
+
+// buttons handling
 
 start2Btn.addEventListener("click", function(){
 	window.dispatchEvent(new Event('resize'));
@@ -153,9 +265,9 @@ start2Btn.addEventListener("click", function(){
 	//canv.style.visibility = "hidden";
 	sc.innerHTML = '<h2>Waiting for players...<h2>';
 	gameStarted = true;
-	if (!socket) {
+	/*if (!socket) {
         socket = io("http://" + OPTIONS.serverHost + ":" + OPTIONS.serverPort);  
-    }
+    }*/
 	socket.emit('start2Game');
 	startGame();
 	}
@@ -168,10 +280,10 @@ start4Btn.addEventListener("click", function(){
 	//canv.style.visibility = "hidden";
 	sc.innerHTML = '<h2>Waiting for players...<h2>';
 	gameStarted = true;
-	if (!socket) {
+	/*if (!socket) {
         socket = io("http://" + OPTIONS.serverHost + ":" + OPTIONS.serverPort);  
 
-    }
+    }*/
 	socket.emit('start4Game');
 	startGame();
 	}
@@ -184,16 +296,30 @@ start6Btn.addEventListener("click", function(){
 	//canv.style.visibility = "hidden";
 	sc.innerHTML = '<h2>Waiting for players...<h2>';
 	gameStarted = true;
-	if (!socket) {
+	/*if (!socket) {
         socket = io("http://" + OPTIONS.serverHost + ":" + OPTIONS.serverPort);  
 
-    }
+    }*/
 	socket.emit('start6Game');
 	startGame();
 	}
 });
 
+loginBtn.addEventListener("click", function(){
+	$('#loginDiv').toggle();
+	if($('#loginDiv').is(':visible'))
+	{
+		loginBtn.innerHTML = "Close login widget";
+	}
+	else
+	{
+		loginBtn.innerHTML = "Login/Signup"
+	}
+	$('#loginResponse').html("");
+	$('#signupResponse').html("");
+});
 
+// to resize canvas with window
 
 window.addEventListener("resize", function(){
 	if(OPTIONS.gameSizeX/document.documentElement.clientWidth >= OPTIONS.gameSizeY/document.documentElement.clientHeight)

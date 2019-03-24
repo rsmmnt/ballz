@@ -14,10 +14,16 @@
   "license": "MIT",
   "dependencies": {
     "express": ">=4.13.4",
+    "express-session": "^1.15.6",
+    "jsonwebtoken": "^8.5.1",
     "matter-js": ">=0.0",
+    "mysql": "^2.16.0",
+    "resurrect-js": ">0.0",
     "sat": ">=0.6.0",
+    "session-file-store": "^1.2.0",
     "socket.io": ">=1.7.4",
     "socket.io-client": ">=1.7.4",
-    "resurrect-js": ">0.0"
+    "uuid": "^3.3.2",
+    "validator": "^10.11.0"
   }
 }

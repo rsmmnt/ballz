@@ -12,16 +12,47 @@
 	<div class="leftScore" id="leftSc"></div>	
 	<div class="rightScore" id="rightSc"></div>
 	<div class="time" id="sc"></div>
-	<div class="control"><button class="startGame" id="start2Button">Play 1x1!</button>
+	<div class="control">
+	<a href="/top100"> Top 100 </a>
+	<button class="startGame" id="start2Button">Play 1x1!</button>
 	<button class="startGame" id="start4Button">Play 2x2!</button>
 	<button class="startGame" id="start6Button">Play 3x3!</button>
-
 	<select class="selplayer" id="typeSelector">
-	<option value="volvo">Default player</option>
+	<option value="default">Default player</option>
 	<option value="agile">Agile player</option>
 	<option value="shooter">Shooter</option>
 	</select>
+	<button class="startGame" id="loginBtn"> Login/Signup </button>
+	<button class="startGame" id="logoutBtn"> Logout </button>
 	</div>
+	<div class="loginform" id="loginDiv">
+	Username <br>
+	<input type="text" id="loginUsername"></input>
+	<br> Password <br>
+	<input type="password" id="loginPassword"></input>
+	<br>
+	<button id="loginSubmit"> Log In </button>
+	<p id="loginResponse"> </p>
+	<br>
+	 Username
+	<br>
+	<input type="text" id="signupUsername"></input>
+	<br>
+	Password
+	<br>
+	<input type="password" id="signupPassword"></input>
+	<br>
+	Repeat password
+	<br>
+	<input type="password" id="signupPassword2"> </input>
+	<br>
+	<button id="signupSubmit"> Sign Up </button>
+	<p id="signupResponse"> </p>
+	</div>
+	
+	<div class="authDiv" id="authDiv"></div>
+	<script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/matter-js@0.14.2/build/matter.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
 	<script src="src/optionsclient.js"></script>

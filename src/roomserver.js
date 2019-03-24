@@ -22,8 +22,9 @@ var findIndex = function (arr, id) {
 
 module.exports = {
 
-  gameRoom: function (_io, socketGroup, _neededPlayers, destroyCallback) {
-    this.destroyer = destroyCallback;
+  gameRoom: function (_io, socketGroup, _neededPlayers, destroyCallback, sqlConnection) {
+    this.sql = sqlConnection;
+	this.destroyer = destroyCallback;
 	//console.log(destroyCallback);
 	this.io = _io
     this.socketGroup = socketGroup
@@ -73,6 +74,7 @@ module.exports = {
 	}
 
     // add walls
+	// write some field customizer with eval?
     this.Walls = [ this.wall(OPTIONS.gameSizeX / 2, 10, OPTIONS.gameSizeX, 20),
       this.wall(OPTIONS.gameSizeX / 2, OPTIONS.gameSizeY - 10, OPTIONS.gameSizeX, 20),
       this.wall(10, (OPTIONS.gameSizeY - OPTIONS.goalSize) / 4, 20, (OPTIONS.gameSizeY - OPTIONS.goalSize) / 2),
@@ -109,12 +111,68 @@ module.exports = {
 
       if ((new Date() - this.startTime) > this.maxTime) {
 	 clearInterval(this.stopper)
+	 this.updateStats();
 	 this.io.to(this.socketGroup).emit('endgame');
+	 
+	 
 	 //console.log(this.destroyer);
 	 this.destroyer(this.socketGroup);
       }
     }.bind(this)
-
+	
+	this.updateStats = function()
+	{
+		let i;
+		for(i = 0; i < this.Users.length; i++)
+		{
+			if(this.Users[i].sock.isAuthenthicated)
+			{
+				var query = "UPDATE users SET games = games + 1 WHERE name = " +  "\"" + this.Users[i].sock.username + "\"";
+				this.sql.query(query, function(err,result)
+				{
+					console.log(err);
+					console.log(result);
+				});
+				
+				if(i < this.Users.length/2)
+				{
+					if(this.Score.topscore < this.Score.botscore)
+					{
+					    query = "UPDATE users SET wins = wins + 1 WHERE name = " + "\"" + this.Users[i].sock.username + "\"";
+						this.sql.query(query, function(err,result)
+						{
+							console.log(err);
+							console.log(result);
+						});
+					
+					}
+				}
+				else
+				{
+					if(this.Score.topscore > this.Score.botscore)
+					{
+					    query = "UPDATE users SET wins = wins + 1 WHERE name = " +  "\"" + this.Users[i].sock.username + "\"";
+						this.sql.query(query, function(err,result)
+						{
+							console.log(err);
+							console.log(result);
+						});
+					
+					}
+					
+					
+				}
+				
+				
+				
+			
+			}
+		}
+		
+		
+		
+	}.bind(this);
+	
     this.startGame = function () {
       console.log('Starting game')
       this.placeAllObjects();
@@ -125,9 +183,11 @@ module.exports = {
         }
       );
 	  
-	  Matter.Events.on(this.engine, 'beforeTick', this.moveLoop)
+	 // Matter.Events.on(this.engine, 'beforeTick', this.moveLoop)
+     // Matter.Events.on(this.engine, 'afterTick', this.sendUpdates)
+        Matter.Events.on(this.engine, 'beforeTick', this.moveLoop)
       Matter.Events.on(this.engine, 'afterTick', this.sendUpdates)
-      // this.updateLoop();
+	  // this.updateLoop();
       this.stopper = setInterval(this.updateLoop, this.engine.timing.delta * 2)
     }.bind(this)
 	
@@ -350,8 +410,9 @@ module.exports = {
           this.ballplayed.playing = false
           Matter.Composite.remove(this.engine.world, this.constraint)
         }
-        this.Users.forEach(function (user) {
-          this.tmpTime = new Date()
+        /*
+		this.Users.forEach(function (user) {
+          var tmpTime = new Date()
           // players can shoot with intervals > shotInterval
           if (user.keypad[KEYBOARD.space] == true && (tmpTime - user.lastShot) > OPTIONS.shotInterval) {
             user.lastShot = tmpTime
@@ -369,10 +430,11 @@ module.exports = {
               })
           }
         }.bind(this))
+		*/
       }
 
       // if one player collides with ball/ has ball
-      if (ballCollisions == 1) {
+      else if (ballCollisions == 1) {
         // if already has ball
         if (ballColl.playing == true) {
           var tmpTime = new Date()

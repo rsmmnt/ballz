@@ -11,7 +11,7 @@ module.exports =
   maxX: 450,
   maxY: 450,
   playerRad: 32,
-  ballRad: 24,
+  ballRad: 20,
   playerColor: 'black',
   ballColor: 'magenta',
   shotInterval: 1000,
@@ -20,12 +20,19 @@ module.exports =
   MAXVELOCITYSQ: 49,
   serverPort: 3000,
   serverHost: '0.0.0.0',
+  serverSecret: 'serverSecretMy',
+  dbHost: 'localhost',
+  dbUser: 'dbuser',
+  dbPassword: 'dbuserpassword',
+  dbName: 'users',
   ballOptions: {
       isStatic: false,
       restitution: 0.999,
       frictionAir: 0.01,
-      friction: 0.1,
-      mass: 20,
+      friction: 0.2,
+      mass: 5,
+	  inverseMass: 1/5,
+	  frictionStatic: 0.75,
       render: { fillStyle: 'magenta' }
    },
    
@@ -35,8 +42,10 @@ module.exports =
           frictionAir: 0.25,
           friction: 0.25,
           mass: 120,
+		  inverseMass: 1/120,
+		  frictionStatic: 0.5,
         //render: { fillStyle: color /* OPTIONS.playerColor*/ },
-		  shotStrength: 0.5
+		  shotStrength: 0.4/4
 		},
   
   defaultPlayerOptions: {
@@ -45,8 +54,10 @@ module.exports =
           frictionAir: 0.25,
           friction: 0.25,
           mass: 180,
+		  inverseMass: 1/180,
+		  frictionStatic: 0.5,
          //render: { fillStyle: color /* OPTIONS.playerColor*/ }
-		  shotStrength: 1
+		  shotStrength: 0.7/4
         },
   
   shooterPlayerOptions: {
@@ -55,8 +66,10 @@ module.exports =
           frictionAir: 0.25,
           friction: 0.25,
           mass: 250,
+		  inverseMass: 1/250,
+		  frictionStatic: 0.5,
          //render: { fillStyle: color /* OPTIONS.playerColor*/ }
-		  shotStrength: 2	
+		  shotStrength: 1.6/4	
 	  
   }
   
