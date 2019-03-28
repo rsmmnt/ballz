@@ -56,7 +56,7 @@ module.exports = {
     this.wall = function (x, y, width, height) {
       return Matter.Bodies.rectangle(x, y, width, height, {
         isStatic: true,
-        restitution: 0.999,
+        restitution: 0.1,
         render: { fillStyle: '#868e96' }
 
       })
@@ -87,6 +87,17 @@ module.exports = {
 	  this.goalPost(OPTIONS.gameSizeX - 10, (OPTIONS.gameSizeY + OPTIONS.goalSize)/2, 12)
 	  		    
     ]
+	
+	this.Walls.forEach(function(item)
+	{
+		item.restitution = 0.999;
+		
+	});
+	
+	
+	var test = this.wall(OPTIONS.gameSizeX / 2, OPTIONS.gameSizeY - 10, OPTIONS.gameSizeX, 20);
+	test.restitution = 0.999;
+	console.log('wall restitution' + test.restitution);
 
     Matter.World.add(this.engine.world, this.Walls)
     Matter.World.add(this.engine.world, this.ballplayed)
@@ -444,7 +455,7 @@ module.exports = {
             Matter.Composite.remove(this.engine.world, this.constraint)
             ballColl.lastShot = tmpTime
             var frc = Matter.Vector.magnitude(Matter.Vector.sub(ballColl.body.position, this.ballplayed.position))
-
+			//Matter.Body.setVelocity(this.ballplayed, {x: 0, y:0});
             Matter.Body.applyForce(this.ballplayed,
               {
                 x: this.ballplayed.position.x - ballColl.body.position.x,
@@ -463,6 +474,7 @@ module.exports = {
           if (ballColl.keypad[KEYBOARD.space] == true && (tmpTime - ballColl.lastShot) > OPTIONS.shotInterval) {
             ballColl.lastShot = tmpTime
             var frc = Matter.Vector.magnitude(Matter.Vector.sub(ballColl.body.position, this.ballplayed.position))
+			//Matter.Body.setVelocity(this.ballplayed, {x: 0, y:0});
 
             Matter.Body.applyForce(this.ballplayed,
               {
@@ -482,7 +494,8 @@ module.exports = {
             Matter.Body.setVelocity(this.ballplayed, { x: 0, y: 0 })
             this.constraint = Matter.Constraint.create({
               bodyA: ballColl.body,
-              bodyB: this.ballplayed
+              bodyB: this.ballplayed,
+			  length: OPTIONS.ballRad + OPTIONS.playerRad
             })
             Matter.World.add(this.engine.world, this.constraint)
           }

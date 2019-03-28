@@ -51,14 +51,35 @@ app.use(session({
 }));
 */
 
+var db;
 
-const db = mysql.createConnection ({
+
+function handleDisconnect() {
+  db = mysql.createConnection ({
     host: OPTIONS.dbHost,
     user: OPTIONS.dbUser,
     password: OPTIONS.dbPassword,
     database: OPTIONS.dbName
-});
+});                                  // the old one cannot be reused.
 
+  db.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+      console.log('error when connecting to db:', err);
+      setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  db.on('error', function(err) {
+    console.log('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      handleDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+handleDisconnect();
 
 
 
@@ -93,85 +114,6 @@ app.get('/top100', function(req,res)
 
 app.use(express.static(__dirname + '/../client'));
 
-/*
-app.post('/login', logIn);
-app.post('/signup', signUp);
-app.get('/stats', getStats);
-
-
-
-
-function logIn(req, res)
-{
-	var query = 'SELECT name, hash, salt FROM users WHERE name = \"' + req.body.username + '\"';
-	db.query(query, function (err, result, fields)
-	{
-		if(result.length > 0)
-		{
-			if(result[0].hash == crypto.pbkdf2Sync(req.body.password, result[0].salt, 2, 64, 'sha512'))
-			{
-				//res.send("Success <a href = \'/\'> Go back </a>");
-				
-				res.redirect("/?login=success");
-			}
-			else
-			{
-				res.redirect("/?login=failed");
-			}
-		}
-		else
-		{
-			res.redirect("/?login=failed");
-		}
-		
-	});
-//	return 
-
-	
-}
-*/
-/*
-function signUp(req, res)
-{
-	
-	var query = 'SELECT name, hash FROM users WHERE name = \"' + req.body.username + '\"';
-	db.query(query, function (err, result, fields)
-	{
-		if(result.length > 0)
-		{
-			res.send("Login exists, choose different one");
-			return;
-		}
-		
-	});
-	
-	var salt = crypto.randomBytes(16).toString('hex');
-	var hash = crypto.pbkdf2Sync(req.body.password, salt, 2, 64, 'sha512');
-
-	db.query('INSERT INTO users ( name , hash, salt, games, wins ) VALUES (\'' + req.body.username + '\',\'' + hash + '\',\'' + salt + '\', 0, 0)',
-	function(err,result)
-	{
-		console.log(err);
-		console.log(result);
-		//res.send('Successful signup');
-	});
-	//return res.redirect(200,"/");
-
-	
-}
-*/
-
-
-function getStats(req,res)
-{
-	
-}
-
-
-
-
-
-
 
 
 var destroy2Room = function(roomId)
@@ -193,20 +135,14 @@ var destroy6Room = function(roomId)
 }.bind(this);
 
 
-
-//rooms2player['2 ' + num2Rooms] = new roomrunner.gameRoom(io, '2 ' + num2Rooms, 2, destroy2Room)
-//rooms4player['4 ' + num4Rooms] = new roomrunner.gameRoom(io, '4 ' + num4Rooms, 4, destroy4Room)
-
-
-
-//console.log(destroy2Room);
-//console.log(destroy4Room);
-
 var tmp2Sockets = {};
 var tmp4Sockets = {};
 var tmp6Sockets = {};
+
+//main gamestarting dispatch function
 // if number of tmpsockets for any type of game is enough, start it
 //pretty stupid, but removal of disconnected users is pretty fast
+
 function roomStarter()
 {
 	var ids2 = Object.keys(tmp2Sockets);
@@ -217,18 +153,16 @@ function roomStarter()
 	var len6 = ids6.length;
 	if(len2 >= 2)
 	{
-		rooms2player['2 ' + num2Rooms] = new roomrunner.gameRoom(io, '2 ' + num2Rooms, 2, destroy2Room, db)
+		var groupId = '2 ' + num2Rooms;
+		rooms2player[groupId] = new roomrunner.gameRoom(io,groupId, 2, destroy2Room, db)
 		console.log('create 2Room id 2 ' + num2Rooms);
 		var i;
 		for(i = 0; i < 2; i++)
 		{
-			//console.log(tmp2Sockets);
-			//console.log(Object.keys(tmp2Sockets));
-			//console.log(Object.keys(tmp2Sockets)[i]);
 			
 			var socket = tmp2Sockets[ids2[i]];
-			socket.join('2 ' + num2Rooms)
-			rooms2player['2 ' + num2Rooms].addUser(socket)
+			socket.join(groupId)
+			rooms2player[groupId].addUser(socket)
 			cur2Users += 1	
 			delete tmp2Sockets[ids2[i]];
 
@@ -340,38 +274,38 @@ io.on('connection', function (socket) {
 			if(data.password.length >= 8)
 			{
 	  
-	  //console.log('signup request ' + data.username + ' ' + data.password);
-	  var query = 'SELECT name, hash FROM users WHERE name = \"' + data.username + '\"';
-	  var isDup = true;
-	  db.query(query, function (err, result, fields)
-	  {
-		console.log(err);
-		console.log(result);
-		if(result.length > 0)
-		{
-			socket.emit('signupInfo', 'User already exists');
+				//console.log('signup request ' + data.username + ' ' + data.password);
+				var query = 'SELECT name, hash FROM users WHERE name = \"' + data.username + '\"';
+				var isDup = true;
+				db.query(query, function (err, result, fields)
+				{
+					console.log(err);
+					console.log(result);
+					if(result.length > 0)
+					{
+						socket.emit('signupInfo', 'User already exists');
 			
-		}
-		else
-		{
-			var salt = crypto.randomBytes(16).toString('hex');
-			var hash = crypto.pbkdf2Sync(data.password, salt, 2, 64, 'sha512').toString('hex');
+					}
+					else
+					{
+						var salt = crypto.randomBytes(16).toString('hex');
+						var hash = crypto.pbkdf2Sync(data.password, salt, 2, 64, 'sha512').toString('hex');
 
-			db.query('INSERT INTO users ( name , hash, salt, games, wins ) VALUES (\'' + data.username + '\',\'' + hash + '\',\'' + salt + '\', 0, 0)',
-			function(err2,result2)
-			{
-				console.log(err2);
-				console.log(result2);
-				socket.emit('signupInfo', 'Successful signup');
-			});
-		}
+						db.query('INSERT INTO users ( name , hash, salt, games, wins ) VALUES (\'' + data.username + '\',\'' + hash + '\',\'' + salt + '\', 0, 0)',
+						function(err2,result2)
+						{
+							console.log(err2);
+							console.log(result2);
+							socket.emit('signupInfo', 'Successful signup');
+						});
+					}
 		
-	  });
-	  }
-	  else
-	  {
-		  socket.emit('signupInfo', 'Password is too short');
-	  }
+				});
+			}
+			else
+			{
+				socket.emit('signupInfo', 'Password is too short');
+			}
 	  }
 	  else
 	  {
@@ -386,6 +320,7 @@ io.on('connection', function (socket) {
 	  
   });
   
+  // authenthicating socket through JWT stored in clients cookie 
   
   socket.on('authJwt', function(data)
   {
@@ -399,11 +334,7 @@ io.on('connection', function (socket) {
 			}
 			
 			
-		});
-
-
-	
-	  
+		});	  
   });
   
   socket.on('authLogout', function(){
@@ -453,15 +384,12 @@ io.on('connection', function (socket) {
 		
 	  
   });
-  
-  
-  //socket.emit('setSocketGroup', ' ' + numRooms)
-  
+    
 });
 
 
 setInterval(roomStarter,1000);
-
+//start server
 var serverport = OPTIONS.serverPort
 var ipaddress = OPTIONS.serverHost
 http.listen(serverport, ipaddress, function () {

@@ -179,7 +179,7 @@ function startGame()
 	
 	var bnds = { 
             min: { x: 0, y: 0 }, 
-            max: { x: 1600, y: 1000 }
+            max: { x: 2400, y: 1500 }
         };
 	
 	
@@ -259,7 +259,6 @@ function startGame()
 // buttons handling
 
 start2Btn.addEventListener("click", function(){
-	window.dispatchEvent(new Event('resize'));
 	if(gameStarted == false)
 	{
 	//canv.style.visibility = "hidden";
@@ -271,10 +270,11 @@ start2Btn.addEventListener("click", function(){
 	socket.emit('start2Game');
 	startGame();
 	}
+	window.dispatchEvent(new Event('resize'));
+
 });
 
 start4Btn.addEventListener("click", function(){
-	window.dispatchEvent(new Event('resize'));
 	if(gameStarted == false)
 	{
 	//canv.style.visibility = "hidden";
@@ -287,10 +287,11 @@ start4Btn.addEventListener("click", function(){
 	socket.emit('start4Game');
 	startGame();
 	}
+	window.dispatchEvent(new Event('resize'));
+
 });
 
 start6Btn.addEventListener("click", function(){
-	window.dispatchEvent(new Event('resize'));
 	if(gameStarted == false)
 	{
 	//canv.style.visibility = "hidden";
@@ -303,6 +304,8 @@ start6Btn.addEventListener("click", function(){
 	socket.emit('start6Game');
 	startGame();
 	}
+	window.dispatchEvent(new Event('resize'));
+
 });
 
 loginBtn.addEventListener("click", function(){
