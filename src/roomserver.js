@@ -1,3 +1,4 @@
+var decomp = require('poly-decomp');
 
 var Resurrect = require('resurrect-js')
 var Matter = require('matter-js')
@@ -8,6 +9,7 @@ var SAT = require('sat')
 var resser = new Resurrect({ revive: false })
 var OPTIONS = require('./options.js')
 var KEYBOARD = require('./keyboard.json')
+//window.decomp = decomp;
 
 var findIndex = function (arr, id) {
   var len = arr.length
@@ -45,10 +47,10 @@ module.exports = {
     this.engine = Matter.Engine.create()
     this.engine.world.gravity.x = 0
     this.engine.world.gravity.y = 0
-    this.engine.broadphase.current = 'bruteForce'
-
+   // this.engine.broadphase.current = 'bruteForce'
+   
     this.engine.timing.delta = 1000 / 60
-
+	this.firstShotMade = false;
     // ball creation
     this.ballplayed = Matter.Bodies.circle(OPTIONS.gameSizeX / 2, OPTIONS.gameSizeY / 2, OPTIONS.ballRad, OPTIONS.ballOptions)
     this.ballplayed.playing = false
@@ -86,8 +88,96 @@ module.exports = {
 	  this.goalPost(OPTIONS.gameSizeX - 10, (OPTIONS.gameSizeY - OPTIONS.goalSize)/2, 12),
 	  this.goalPost(OPTIONS.gameSizeX - 10, (OPTIONS.gameSizeY + OPTIONS.goalSize)/2, 12)
 	  		    
-    ]
+    ];
 	
+	this.centerLineLeftVertices = 
+		[[ {x: 5, y: -OPTIONS.gameSizeY/2},
+			{x: 5, y: -200},
+		  {x: -200/Math.sqrt(2) + 5, y: -200/Math.sqrt(2)},
+		  {x: -195, y: 0},
+		  {x: -200/Math.sqrt(2) + 5, y: 200/Math.sqrt(2)},
+			  {x: 5, y: 200},
+		  {x: 5, y: OPTIONS.gameSizeY/2},
+		  {x: -5, y: OPTIONS.gameSizeY/2},
+		  {x: -5, y: 200},
+		  {x: -200/Math.sqrt(2) - 5, y: 200/Math.sqrt(2)},
+		  {x: -205, y: 0},
+		  {x: -200/Math.sqrt(2) - 5, y: -200/Math.sqrt(2)},
+		  {x: -5, y: -200},
+		  {x: -5, y: -OPTIONS.gameSizeY/2}
+		  
+	
+		]];
+		
+	this.centerLineRightVertices = 
+		[[ {x: 5, y: -OPTIONS.gameSizeY/2},
+		  {x: 5, y: -200},
+		  {x: 200/Math.sqrt(2) + 5, y: -200/Math.sqrt(2)},
+		  {x: 205, y: 0},
+		  {x: 200/Math.sqrt(2) + 5, y: 200/Math.sqrt(2)},
+		  {x: 5, y: 200},
+		  {x: 5, y: OPTIONS.gameSizeY/2},
+		  {x: -5, y: OPTIONS.gameSizeY/2},
+		  {x: -5, y: 200},
+		  {x: 200/Math.sqrt(2) - 5, y: 200/Math.sqrt(2)},
+		  {x: 195, y: 0},
+		  {x: 200/Math.sqrt(2) - 5, y: -200/Math.sqrt(2)},
+		  {x: -5, y: -200},
+		  {x: -5, y: -OPTIONS.gameSizeY/2}
+		  
+	
+		]];	
+	var leftCenter = Matter.Vertices.mean(this.centerLineLeftVertices[0]);
+	var rightCenter = Matter.Vertices.mean(this.centerLineRightVertices[0]);
+	console.log(leftCenter);
+	console.log(rightCenter);
+	/*	
+	this.testVertices = [[
+	{x: 500, y:500},
+	{x: 600, y: 600},
+	{x: 500, y: 700},
+	{x: 400, y: 600}
+	]];
+	*/
+	//this.testVertices = Matter.Vertices.fromPath('20 -2000 20 -100 -60 0 20 100 20 2000 -20 2000 -20 100 -100 0 -20 -100 -20 -2000');
+	//this.testVertices2 = 
+	
+	
+	this.leftCenter = Matter.Bodies.fromVertices(OPTIONS.gameSizeX/2 - 80 , OPTIONS.gameSizeY/2, this.centerLineLeftVertices, 
+	{ 
+	isStatic: true,
+	render: { fillStyle: 'white'},
+	collisionFilter:{
+		group: 2,
+		mask: 4,
+		category: 4
+	}
+	
+	});
+	
+	this.rightCenter = Matter.Bodies.fromVertices(OPTIONS.gameSizeX/2 + 80 , OPTIONS.gameSizeY/2, this.centerLineRightVertices, 
+	{ 
+	isStatic: true,
+	render: {
+                fillStyle: 'white'
+				
+	},
+	collisionFilter:{
+		group: 2,
+		mask: 8,
+		category: 8
+	}
+	
+	}
+	);
+	
+	
+	//this.testBody.restitution = 0.999;
+	//Matter.Body.setStatic(this.testBody);
+	//console.log(this.testBody);
+	//console.log(this.wall(1000,1000,100,100));
+	Matter.World.add(this.engine.world, this.leftCenter);
+	Matter.World.add(this.engine.world, this.rightCenter);
 	this.Walls.forEach(function(item)
 	{
 		item.restitution = 0.999;
@@ -186,7 +276,8 @@ module.exports = {
 	
     this.startGame = function () {
       console.log('Starting game')
-      this.placeAllObjects();
+      this.placeAllObjects(0);
+	  this.rightCenter.isSensor = true;
 	  this.io.to(this.socketGroup).emit('sendGameState',
         {
           world: resser.stringify(this.engine.world.bodies),
@@ -202,6 +293,9 @@ module.exports = {
       this.stopper = setInterval(this.updateLoop, this.engine.timing.delta * 2)
     }.bind(this)
 	
+	
+	
+	
     this.addUser = function (socket) {
       if (this.numPlayers == this.neededPlayers) {
         console.log('Not needed player trying to connect')
@@ -212,6 +306,7 @@ module.exports = {
       var type = socket.handshake.query.type
       var radius = OPTIONS.playerRad
       var color = (this.numPlayers <= this.neededPlayers/2) ? 'blue' : 'red'
+	  var catmask = (this.numPlayers <= this.neededPlayers/2) ? 4 : 8;
 	  var newbody = Matter.Bodies.circle(OPTIONS.minX + Math.random() * (OPTIONS.maxX - OPTIONS.minX),
         OPTIONS.minY + Math.random() * (OPTIONS.maxY - OPTIONS.minY), OPTIONS.playerRad, {
           isStatic: false,
@@ -220,6 +315,10 @@ module.exports = {
           friction: 0.25,
           mass: 100,
           render: { fillStyle: color /* OPTIONS.playerColor*/ },
+		  collisionFilter: {
+			  category: catmask,
+			  mask: catmask
+		  }, 
 		  shotStrength: 1
         }, 200)
 
@@ -306,22 +405,42 @@ module.exports = {
       }
     }.bind(this)
 	
-	this.placeAllObjects = function()
+	this.placeAllObjects = function(goal)
 	{
 		Matter.Body.setPosition(this.ballplayed, { x: OPTIONS.gameSizeX / 2, y: OPTIONS.gameSizeY / 2 })
         Matter.Body.setVelocity(this.ballplayed, { x: 0, y: 0 })
 		var i = 0;
 		var ystep = OPTIONS.gameSizeY/(this.numPlayers/2 + 1);
+		var collMask = (goal == 1) ? 4 : 8
 		for(i = 0; i < this.numPlayers; i++)
 		{
 			var plx = (i < this.numPlayers/2) ? OPTIONS.gameSizeX*(1/4) : OPTIONS.gameSizeX*(3/4);
 			var ply = (i%(this.numPlayers/2))*ystep + ystep;
 			Matter.Body.setPosition(this.Users[i].body, {x: plx, y: ply});
 			Matter.Body.setVelocity(this.Users[i].body, {x: 0, y: 0})
+			
+			this.Users[i].body.collisionFilter.mask = collMask;
+			this.Users[i].body.collisionFilter.category = collMask;
+			
+			
 		}
-		
+		this.firstShotMade = false;
+
 		
 	}.bind(this)
+	
+	/*
+	Remove interactions with center lines
+	*/
+	this.onFirstTouch = function()
+	{
+		for(i = 0; i < this.numPlayers; i++)
+		{
+			this.Users[i].body.collisionFilter.mask = 16;
+			this.Users[i].body.collisionFilter.category = 16;
+     	}
+		
+	}
 	
     this.sendUpdates = function () {
       // send world to all sockets, performance bottleneck with full object serialization through resurrect-js
@@ -361,7 +480,7 @@ module.exports = {
         this.ballplayed.playing = false
         Matter.Body.setPosition(this.ballplayed, { x: OPTIONS.gameSizeX / 2, y: OPTIONS.gameSizeY / 2 })
         Matter.Body.setVelocity(this.ballplayed, { x: 0, y: 0 })
-		this.placeAllObjects();
+		this.placeAllObjects(0);
       }
       if (this.ballplayed.position.x > OPTIONS.gameSizeX - OPTIONS.goalDepth) {
         this.Users.forEach(function (user) {
@@ -374,7 +493,7 @@ module.exports = {
         this.Score.botscore += 1
         Matter.Body.setPosition(this.ballplayed, { x: OPTIONS.gameSizeX / 2, y: OPTIONS.gameSizeY / 2 })
         Matter.Body.setVelocity(this.ballplayed, { x: 0, y: 0 })
-		this.placeAllObjects();
+		this.placeAllObjects(1);
       }
 
       // apply movement forces from key inputs
@@ -404,7 +523,12 @@ module.exports = {
         // console.log(this.ballplayed);
         var tmpcollision = Matter.SAT.collides(user.body, this.ballplayed)
         if (tmpcollision.collided || user.playing) {
-          ballCollisions += 1
+          if(this.firstShotMade == false)
+		  {
+			  this.firstShotMade = true;
+			  this.onFirstTouch();
+		  }
+		  ballCollisions += 1
           ballColl = user
         }
         if (user.playing) {

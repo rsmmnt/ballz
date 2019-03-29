@@ -18,6 +18,7 @@
     "jsonwebtoken": "^8.5.1",
     "matter-js": ">=0.0",
     "mysql": "^2.16.0",
+    "poly-decomp": "^0.3.0",
     "resurrect-js": ">0.0",
     "sat": ">=0.6.0",
     "session-file-store": "^1.2.0",
