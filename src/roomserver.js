@@ -53,14 +53,17 @@ module.exports = {
 	this.firstShotMade = false;
     // ball creation
     this.ballplayed = Matter.Bodies.circle(OPTIONS.gameSizeX / 2, OPTIONS.gameSizeY / 2, OPTIONS.ballRad, OPTIONS.ballOptions)
-    this.ballplayed.playing = false
+    this.ballplayed.collisionFilter.group = 1;
+	this.ballplayed.playing = false
     // console.log(this.ballplayed);
     this.wall = function (x, y, width, height) {
       return Matter.Bodies.rectangle(x, y, width, height, {
         isStatic: true,
         restitution: 0.1,
-        render: { fillStyle: '#868e96' }
-
+        render: { fillStyle: '#868e96' },
+		collisionFilter: {
+			group:1
+		}
       })
     }
 	
@@ -69,7 +72,10 @@ module.exports = {
 		return Matter.Bodies.circle(x,y,radius, {
 			 isStatic: true,
 			 restitution: 0.999,
-			 render: { fillStyle: 'black' }
+			 render: { fillStyle: 'black' },
+			 collisionFilter: {
+				 group: 1
+			 }
 			
 		});
 		
@@ -129,8 +135,11 @@ module.exports = {
 		]];	
 	var leftCenter = Matter.Vertices.mean(this.centerLineLeftVertices[0]);
 	var rightCenter = Matter.Vertices.mean(this.centerLineRightVertices[0]);
-	console.log(leftCenter);
-	console.log(rightCenter);
+	//console.log(leftCenter);
+	//console.log(rightCenter);
+	console.log(this.Walls[0]);
+	//this.centerLineLeftVertices[0] = Matter.Vertices.chamfer(this.centerLineLeftVertices[0], [0,0,5,5,5,0,0,0,0,5,5,5,0,0]);
+	//console.log(this.centerLineLeftVertices);
 	/*	
 	this.testVertices = [[
 	{x: 500, y:500},
@@ -162,6 +171,8 @@ module.exports = {
                 fillStyle: 'white'
 				
 	},
+	
+	
 	collisionFilter:{
 		group: 2,
 		mask: 8,
@@ -317,7 +328,8 @@ module.exports = {
           render: { fillStyle: color /* OPTIONS.playerColor*/ },
 		  collisionFilter: {
 			  category: catmask,
-			  mask: catmask
+			  mask: catmask,
+			  group: 1
 		  }, 
 		  shotStrength: 1
         }, 200)
