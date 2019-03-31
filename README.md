@@ -1,7 +1,7 @@
 # Ballz
 Another simple Haxball-like game based on Socket.io and Matter.js.
 
-Running server example is available on http://smthgroup.chph.ras.ru:8081/
+Running server example is available on http://ballzgame.ml
 
 Running local server: 
 
